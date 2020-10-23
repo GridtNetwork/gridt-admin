@@ -95,7 +95,7 @@ def remove_movements(number):
     with session_scope() as session:
         to_delete_rows = session.query(Movement.id).limit(number).all()
         to_delete_ids = list(itertools.chain.from_iterable(to_delete_rows))
-        click.echo("Deleting {len(to_delete_ids)} movements")
+        click.echo(f"Deleting {len(to_delete_ids)} movements")
         session.query(Movement).filter(Movement.id.in_(to_delete_ids)).delete(
             synchronize_session=False
         )
