@@ -68,7 +68,7 @@ def create_many_movements(number):
             session.add(movement)
 
             # limit max session size
-            if i % 1000:
+            if i % 1000 == 0:
                 session.commit()
                 click.echo("Sending 1000 movements")
         click.echo(f"Added {number} random movements")
