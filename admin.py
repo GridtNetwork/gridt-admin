@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 import sys
+import string
 import os
 import random
 import itertools
@@ -105,7 +106,8 @@ def initialize_database(ctx):
 def create_many_users(ctx, number, subscriptions):
     configure_uri(ctx)
     for i in range(number):
-        email = "".join(lorem.sentence()[:5].split())
+        letters = string.ascii_lowercase
+        email = ''.join(random.choice(letters) for i in range(12))
         email += "@gmail.com"
         password = lorem.sentence()[:16]
         register(lorem.sentence()[:32], email, password)
