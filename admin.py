@@ -184,7 +184,7 @@ def register_user(ctx, username, email, password, subscriptions):
 
     if subscriptions:
         with session_scope() as session:
-            user_id = session.query(User).find_by(email=email).one()
+            user_id = session.query(User).filter_by(email=email).one()
             for movement_id in subscriptions:
                 subscribe(user_id, movement_id)
                 click.echo(f"Subcribed user to movement: {movement_id}")
