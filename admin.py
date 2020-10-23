@@ -3,6 +3,7 @@
 import sys
 import os
 import random
+import itertools
 from functools import wraps
 
 import click
@@ -86,6 +87,18 @@ def count_movements():
 def register_user(username, email, password):
     register(username, email, password)
     click.echo(f"Registering user {username} successfull")
+
+
+@cli.command(help="Remove the first n movements.")
+@click.option("--number", default=10, help="Number of movements to be removed.")
+def remove_movements(number):
+    with session_scope() as session:
+        to_delete_rows = session.query(Movement.id).limit(number).all()
+        to_delete_ids = list(itertools.chain.from_iterable(to_delete_rows))
+        click.echo("Deleting {len(to_delete_ids)} movements")
+        session.query(Movement).filter(Movement.id.in_(to_delete_ids)).delete(
+            synchronize_session=False
+        )
 
 
 if __name__ == "__main__":
