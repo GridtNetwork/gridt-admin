@@ -165,6 +165,30 @@ def count_users(ctx):
         click.echo(session.query(User).count())
 
 
+@count.command(
+    name="subscriptions", short_help="Count the subscriptions of user."
+)
+@click.argument("user_id", type=int)
+@click.pass_context
+def count_subscriptions(ctx, user_id):
+    configure_uri(ctx)
+
+    # At the present gridt.models.User.current_movements seems to be
+    # broken, therefore I am reimplementing it.
+    from gridt.models import MovementUserAssociation as MUA
+
+    with session_scope() as session:
+        click.echo(
+            len(
+                session.query(Movement)
+                .join(MUA)
+                .filter(MUA.movement_id == Movement.id)
+                .filter_by(follower_id=user_id, destroyed=None)
+                .all()
+            )
+        )
+
+
 @cli.command(short_help="Register a user in the database.")
 @click.argument("username")
 @click.argument("email")
@@ -205,6 +229,17 @@ def remove_movements(ctx, number):
         session.query(Movement).filter(Movement.id.in_(to_delete_ids)).delete(
             synchronize_session=False
         )
+
+
+@cli.command()
+@click.argument("user_id")
+@click.argument("movements", nargs=-1)
+@click.pass_context
+def subscribe_user(ctx, user_id, movements):
+    configure_uri(ctx)
+    for movement_id in movements:
+        click.echo(f"Subscribing user '{user_id}' to movement '{movement_id}'")
+        subscribe(user_id, movement_id)
 
 
 if __name__ == "__main__":
