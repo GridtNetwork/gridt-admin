@@ -30,10 +30,12 @@ def cli(ctx, uri):
     ctx.obj["uri"] = uri
 
 
-@cli.group(help="""
-                Create many of one type in the database with random
-                information.
-                """)
+@cli.group(
+    help="""
+         Create many of one type in the database with random
+         information.
+         """
+)
 def create_many():
     pass
 
@@ -107,7 +109,7 @@ def create_many_users(ctx, number, subscriptions):
     configure_uri(ctx)
     for i in range(number):
         letters = string.ascii_lowercase
-        email = ''.join(random.choice(letters) for i in range(12))
+        email = "".join(random.choice(letters) for i in range(12))
         email += "@gmail.com"
         password = lorem.sentence()[:16]
         register(lorem.sentence()[:32], email, password)
@@ -145,7 +147,9 @@ def create_many_movements(ctx, number):
         click.echo(f"Added {number} random movements")
 
 
-@count.command(name='movements', short_help="Count the movements in the database.")
+@count.command(
+    name="movements", short_help="Count the movements in the database."
+)
 @click.pass_context
 def count_movements(ctx):
     configure_uri(ctx)
@@ -153,9 +157,9 @@ def count_movements(ctx):
         click.echo(session.query(Movement).count())
 
 
-@count.command(name='users', short_help="Count the users in the database.")
+@count.command(name="users", short_help="Count the users in the database.")
 @click.pass_context
-def count_movements(ctx):
+def count_users(ctx):
     configure_uri(ctx)
     with session_scope() as session:
         click.echo(session.query(User).count())
@@ -165,11 +169,25 @@ def count_movements(ctx):
 @click.argument("username")
 @click.argument("email")
 @click.argument("password")
+@click.option(
+    "--subscriptions",
+    "-s",
+    default=[],
+    multiple=True,
+    help="Subscribe to movements",
+)
 @click.pass_context
-def register_user(ctx, username, email, password):
+def register_user(ctx, username, email, password, subscriptions):
     configure_uri(ctx)
     register(username, email, password)
     click.echo(f"Registering user {username} successfull")
+
+    if subscriptions:
+        with session_scope() as session:
+            user_id = session.query(User).find_by(email=email).one()
+            for movement_id in subscriptions:
+                subscribe(user_id, movement_id)
+                click.echo(f"Subcribed user to movement: {movement_id}")
 
 
 @cli.command(short_help="Remove the first n movements.")
