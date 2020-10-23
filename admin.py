@@ -13,6 +13,7 @@ from sqlalchemy import create_engine
 from gridt.db import Session, Base
 from gridt.controllers.helpers import session_scope
 from gridt.models import Movement
+from gridt.controllers.user import register
 
 
 @click.group()
@@ -68,12 +69,23 @@ def create_many_movements(number):
             # limit max session size
             if i % 1000:
                 session.commit()
+                click.echo('Sending 1000 movements')
+        click.echo(f'Added {number} random movements')
 
 
 @cli.command(help="Count the movements in the database.")
 def count_movements():
     with session_scope() as session:
         click.echo(session.query(Movement).count())
+
+
+@cli.command(help="Register a user in the database.")
+@click.argument('username')
+@click.argument('email')
+@click.argument('password')
+def register_user(username, email, password):
+    register(username, email, password)
+    click.echo(f'Registering user {username} successfull')
 
 if __name__ == "__main__":
     cli()
