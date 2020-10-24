@@ -10,6 +10,7 @@ import click
 import lorem
 
 from sqlalchemy import create_engine
+from sqlalchemy.sql.expression import func, select
 
 from gridt.db import Session, Base
 from gridt.controllers.helpers import session_scope
@@ -36,6 +37,11 @@ def create():
     pass
 
 
+@cli.group(short_help="Delete row(s) in the database.")
+def delete():
+    pass
+
+
 @create.group(
     name="many",
     help="""
@@ -44,6 +50,11 @@ def create():
          """,
 )
 def create_many():
+    pass
+
+
+@delete.group(name="many", short_help="Delete many rows in the database")
+def delete_many():
     pass
 
 
@@ -230,12 +241,14 @@ def create_user(ctx, username, email, password, subscriptions):
                 click.echo(f"Subcribed user to movement: {movement_id}")
 
 
-@cli.command(short_help="Remove the first n movements.")
+@delete_many.command(
+    name="movements", short_help="Remove the first n movements."
+)
 @click.option(
     "--number", default=10, help="Number of movements to be removed."
 )
 @click.pass_context
-def remove_movements(ctx, number):
+def delete_many_movements(ctx, number):
     configure_uri(ctx)
     with session_scope() as session:
         to_delete_rows = session.query(Movement.id).limit(number).all()
@@ -284,6 +297,30 @@ def find_user(ctx, query):
             click.echo(user_id[0])
         else:
             sys.exit(1)
+
+
+@delete_many.command(name="associations")
+@click.option(
+    "--number",
+    "-n",
+    type=int,
+    default=100,
+    help="Number of muas to be deleted.",
+)
+@click.pass_context
+def delete_many_associations(ctx, number):
+    configure_uri(ctx)
+    with session_scope() as session:
+        to_delete_rows = (
+            session.query(MUA.id).order_by(func.rand()).limit(number).all()
+        )
+        to_delete_ids = list(itertools.chain.from_iterable(to_delete_rows))
+        session.query(MUA).filter(MUA.id.in_(to_delete_ids)).delete(
+            synchronize_session=False
+        )
+        click.echo(
+            f"Deleted {len(to_delete_ids)} associations from the database."
+        )
 
 
 if __name__ == "__main__":
