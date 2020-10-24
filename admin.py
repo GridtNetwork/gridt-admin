@@ -52,6 +52,11 @@ def count():
     pass
 
 
+@cli.group(help="Find the id of a row.")
+def find():
+    pass
+
+
 def configure_uri(ctx):
     uri = ctx.obj["uri"]
     if not uri:
@@ -253,6 +258,32 @@ def subscribe_user(ctx, user_id, movements):
     for movement_id in movements:
         click.echo(f"Subscribing user '{user_id}' to movement '{movement_id}'")
         subscribe(user_id, movement_id)
+
+
+@find.command(
+    name="user",
+    short_help="Find a user by email or username",
+    help="""
+         Give as a query the email or username of the user you are looking for and this will find the id of the user.
+         """,
+)
+@click.argument("query")
+@click.pass_context
+def find_user(ctx, query):
+    configure_uri(ctx)
+
+    from sqlalchemy import or_
+
+    with session_scope() as session:
+        user_id = (
+            session.query(User.id)
+            .filter(or_(User.username == query, User.email == query))
+            .one_or_none()
+        )
+        if user_id:
+            click.echo(user_id[0])
+        else:
+            sys.exit(1)
 
 
 if __name__ == "__main__":
