@@ -13,7 +13,7 @@ from sqlalchemy import create_engine
 
 from gridt.db import Session, Base
 from gridt.controllers.helpers import session_scope
-from gridt.models import Movement, User
+from gridt.models import Movement, User, MovementUserAssociation as MUA
 from gridt.controllers.user import register
 from gridt.controllers.movements import subscribe
 
@@ -187,6 +187,16 @@ def count_subscriptions(ctx, user_id):
                 .all()
             )
         )
+
+
+@count.command(
+    name="associations", short_help="Count movement user assocations"
+)
+@click.pass_context
+def count_muas(ctx):
+    configure_uri(ctx)
+    with session_scope() as session:
+        click.echo(session.query(MUA).count())
 
 
 @cli.command(short_help="Register a user in the database.")
