@@ -22,6 +22,7 @@ from gridt.controllers.movements import subscribe
 @click.option(
     "--uri",
     default=None,
+    envvar="ADMIN_DB_URI",
     help="URI of the database, overwrites environment variable ADMIN_DB_URI",
 )
 @click.pass_context
@@ -30,11 +31,17 @@ def cli(ctx, uri):
     ctx.obj["uri"] = uri
 
 
-@cli.group(
+@cli.group(short_help="Create new row(s) in the database.")
+def create():
+    pass
+
+
+@create.group(
+    name="many",
     help="""
          Create many of one type in the database with random
          information.
-         """
+         """,
 )
 def create_many():
     pass
@@ -48,15 +55,8 @@ def count():
 def configure_uri(ctx):
     uri = ctx.obj["uri"]
     if not uri:
-        uri = os.environ.get("ADMIN_DB_URI")
-
-        if not uri:
-            click.secho("No database URI provided, exiting.")
-            sys.exit(1)
-        else:
-            click.echo("Using URI from environment")
-    else:
-        click.echo("Using URI from command line")
+        click.secho("No database URI provided, exiting.")
+        sys.exit(1)
 
     engine = create_engine(uri)
     ctx.obj["engine"] = engine
@@ -199,7 +199,7 @@ def count_muas(ctx):
         click.echo(session.query(MUA).count())
 
 
-@cli.command(short_help="Register a user in the database.")
+@create.command(name="user", short_help="Register a user in the database.")
 @click.argument("username")
 @click.argument("email")
 @click.argument("password")
@@ -211,7 +211,7 @@ def count_muas(ctx):
     help="Subscribe to movements",
 )
 @click.pass_context
-def register_user(ctx, username, email, password, subscriptions):
+def create_user(ctx, username, email, password, subscriptions):
     configure_uri(ctx)
     register(username, email, password)
     click.echo(f"Registering user {username} successfull")
@@ -241,7 +241,10 @@ def remove_movements(ctx, number):
         )
 
 
-@cli.command()
+@create.command(
+    name="subscription",
+    short_help="Subscribe a user to a series of movements.",
+)
 @click.argument("user_id")
 @click.argument("movements", nargs=-1)
 @click.pass_context
