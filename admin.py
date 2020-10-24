@@ -2,7 +2,6 @@
 
 import sys
 import string
-import os
 import random
 import itertools
 
@@ -10,7 +9,7 @@ import click
 import lorem
 
 from sqlalchemy import create_engine
-from sqlalchemy.sql.expression import func, select
+from sqlalchemy.sql.expression import func
 
 from gridt.db import Session, Base
 from gridt.controllers.helpers import session_scope
@@ -88,13 +87,6 @@ def create_random_movement():
         lorem.paragraph()[:1000],
     )
     return movement
-
-
-@cli.command(short_help="Create the required tables in the database.")
-@click.pass_context
-def initialize_database(ctx):
-    configure_uri(ctx)
-    Base.metadata.create_all(ctx.obj["engine"])
 
 
 @create_many.command(
@@ -208,11 +200,21 @@ def count_subscriptions(ctx, user_id):
 @count.command(
     name="associations", short_help="Count movement user assocations"
 )
+@click.option("--follower_id", "-f")
+@click.option("--leader_id", "-l")
+@click.option("--movement_id", "-m")
 @click.pass_context
-def count_muas(ctx):
+def count_muas(ctx, follower_id, leader_id, movement_id):
     configure_uri(ctx)
     with session_scope() as session:
-        click.echo(session.query(MUA).count())
+        query = session.query(MUA)
+        if follower_id:
+            query.filter_by(follower_id=follower_id)
+        if movement_id:
+            query.filter_by(movement_id=movement_id)
+        if leader_id:
+            query.filter_by(leader_id=leader_id)
+        click.echo(query.count())
 
 
 @create.command(name="user", short_help="Register a user in the database.")
@@ -239,6 +241,15 @@ def create_user(ctx, username, email, password, subscriptions):
             for movement_id in subscriptions:
                 subscribe(user_id, movement_id)
                 click.echo(f"Subcribed user to movement: {movement_id}")
+
+
+@create.command(
+    name="tables", short_help="Create the required tables in the database."
+)
+@click.pass_context
+def create_tables(ctx):
+    configure_uri(ctx)
+    Base.metadata.create_all(ctx.obj["engine"])
 
 
 @delete_many.command(
@@ -277,7 +288,9 @@ def subscribe_user(ctx, user_id, movements):
     name="user",
     short_help="Find a user by email or username",
     help="""
-         Give as a query the email or username of the user you are looking for and this will find the id of the user.
+         Give as a query the email or username of the
+         user you are looking for and this will find
+         the id of the user.
          """,
 )
 @click.argument("query")
